@@ -13,9 +13,11 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        widget.cpp
+        widget.cpp \
+    CamCaptureThread.cpp
 
-HEADERS  += widget.h
+HEADERS  += widget.h \
+    CamCaptureThread.h
 
 FORMS    += widget.ui
 

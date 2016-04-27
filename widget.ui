@@ -24,12 +24,19 @@
    <item row="1" column="0">
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>
-      <widget class="QPushButton" name="pushButton">
+      <widget class="QPushButton" name="pushButton_open_cam">
        <property name="locale">
         <locale language="Chinese" country="Taiwan"/>
        </property>
        <property name="text">
         <string>開啟相機</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButton_close_cam">
+       <property name="text">
+        <string>關閉相機</string>
        </property>
       </widget>
      </item>
@@ -60,10 +67,6 @@
   </layout>
   <zorder>toolButton</zorder>
   <zorder>label</zorder>
-  <zorder>verticalLayoutWidget</zorder>
-  <zorder>horizontalLayoutWidget</zorder>
-  <zorder>horizontalLayoutWidget_2</zorder>
-  <zorder>horizontalLayoutWidget_2</zorder>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <resources/>
