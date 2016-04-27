@@ -1,22 +1,28 @@
 #include "CamCaptureThread.h"
 
+using namespace cv;
 using namespace std;
 using namespace FlyCapture2;
 
-CamCaptureThread::CamCaptureThread()
+CamCaptureThread::CamCaptureThread() :
+    output(new QImage)
+//    output(new QImage),
+//    rawImage(new Image),
+//    rgbImage(new Image)
 {
     this->stopped = false;
+    this->binaryOnOff = false;
 }
 
 void CamCaptureThread::stop()
 {
     stopped = true;
+    delete output;
+
 }
 
 void CamCaptureThread::run()
 {
-    cout << "CamCaptureThread::run" << endl;
-
     error = busMgr.GetNumOfCameras(&numCameras);
     if(error != PGRERROR_OK)
     {
@@ -51,21 +57,30 @@ void CamCaptureThread::run()
         Image rgbImage;
         while(!stopped)
         {
+//            error = cam.RetrieveBuffer(rawImage);
             error = cam.RetrieveBuffer(&rawImage);
             if(error != PGRERROR_OK)
             {
                 error.PrintErrorTrace();
                 stopped = true;
             }
-            rawImage.Convert( PIXEL_FORMAT_BGR, &rgbImage );
+//            rawImage->Convert(PIXEL_FORMAT_BGR, rgbImage);
+            rawImage.Convert(PIXEL_FORMAT_BGR, &rgbImage);
 
             unsigned int rowBytes =
                     (double)rgbImage.GetReceivedDataSize()/(double)rgbImage.GetRows();
+//                    (double)rgbImage->GetReceivedDataSize()/(double)rgbImage->GetRows();
             cv::Mat image =
                     cv::Mat(rgbImage.GetRows(), rgbImage.GetCols(), CV_8UC3, rgbImage.GetData(),rowBytes);
+//                    cv::Mat(rgbImage->GetRows(), rgbImage->GetCols(), CV_8UC3, rgbImage->GetData(),rowBytes);
 
-            output = Mat2QImage(image);
-            emit refresh(&output);
+            if(binaryOnOff)
+            {
+                cv::threshold(image, image, binaryValue, (100+150), CV_THRESH_BINARY);
+            }
+
+            *output = Mat2QImage(image);
+            emit refresh(output);
         }
         // 4. stop camera
         error = cam.StopCapture();
@@ -79,6 +94,8 @@ void CamCaptureThread::run()
         {
             error.PrintErrorTrace();
         }
+//        delete rawImage;
+//        delete rgbImage;
     }
 }
 
@@ -112,4 +129,14 @@ QImage CamCaptureThread::Mat2QImage(const cv::Mat &src)
         qDebug() << "ERROR: Mat could not be converted to QImage.";
         return QImage();
     }
+}
+
+void CamCaptureThread::setBinaryOnOff(bool onOff)
+{
+    binaryOnOff = onOff;
+}
+
+void CamCaptureThread::setBinaryValue(unsigned int value)
+{
+    binaryValue = value;
 }

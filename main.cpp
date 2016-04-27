@@ -7,8 +7,5 @@ int main(int argc, char *argv[])
     Widget w;
     w.show();
 
-    FlyCapture2::Error error;
-    FlyCapture2::BusManager busMgr;
-
     return a.exec();
 }

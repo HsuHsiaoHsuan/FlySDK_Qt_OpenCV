@@ -19,6 +19,8 @@ class CamCaptureThread : public QThread
 public:
     CamCaptureThread();
     void stop();
+    void setBinaryOnOff(bool onOff);
+    void setBinaryValue(unsigned int value);
 protected:
     void run();
 private:
@@ -30,7 +32,11 @@ private:
     FlyCapture2::Camera cam;
     const int k_numImages = 10;
     QImage Mat2QImage(const cv::Mat &src);
-    QImage output;
+//    FlyCapture2::Image *rawImage;
+//    FlyCapture2::Image *rgbImage;
+    QImage *output;
+    bool binaryOnOff;
+    unsigned int binaryValue;
 //    const FlyCapture2::Mode k_fmt7Mode = FlyCapture2::MODE_0;
 //    const FlyCapture2::PixelFormat k_fmt7PixFmt = FlyCapture2::PIXEL_FORMAT_MONO8;
 signals:
