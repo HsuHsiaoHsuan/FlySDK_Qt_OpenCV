@@ -1,6 +1,7 @@
 #include "widget.h"
 #include "ui_widget.h"
 
+using namespace cv;
 using namespace FlyCapture2;
 using namespace std;
 
@@ -30,7 +31,7 @@ Widget::Widget(QWidget *parent) :
         {
             PrintError(error);
         }
-        //RunSingleCamera(guid);
+        RunSingleCamera(guid);
     }
 
     cv::Mat image;
@@ -86,6 +87,7 @@ QImage Widget::Mat2QImage2(const cv::Mat &src)
 int Widget::RunSingleCamera( PGRGuid guid ) {
     int w = 1280;
     int h = 1024;
+    cout << "run" << endl;
 
     const int k_numImages = 10;
     FlyCapture2::Error error;
@@ -106,7 +108,7 @@ int Widget::RunSingleCamera( PGRGuid guid ) {
 
     Image rawImage;
     Image rgbImage;
-    while(1)
+    //while(1)
     {
         error = cam.RetrieveBuffer(&rawImage);
         if(error != PGRERROR_OK)
@@ -117,14 +119,35 @@ int Widget::RunSingleCamera( PGRGuid guid ) {
         // Convert to RGB
         rawImage.Convert( PIXEL_FORMAT_BGR, &rgbImage );
 
+        error = rgbImage.Save("test.png");
+
         unsigned int rowBytes = (double)rgbImage.GetReceivedDataSize()/(double)rgbImage.GetRows();
 
-        QImage img(rgbImage.GetData(), rgbImage.GetCols(), rgbImage.GetRows(), rowBytes, QImage::Format_RGB32);
+        // OpenCV
+        cv::Mat image = cv::Mat(rgbImage.GetRows(), rgbImage.GetCols(), CV_8UC3, rgbImage.GetData(),rowBytes);
+        imshow("Camera", image);
 
-//        QByteArray buffer(rowBytes * h, 0xFF);
-//        uchar * p = (uchar*)buffer.data() + rowBytes;
-//        QImage img(p, w, h, rowBytes, QImage::Format_ARGB32);
-//        ui->toolButton->setIconSize(QSize(img.width(), img.height()));
-//        ui->toolButton->setIcon(QPixmap::fromImage(img));
+//        QImage img(rgbImage.GetData(), rgbImage.GetCols(), rgbImage.GetRows(), rowBytes, QImage::Format_RGB32);
+//        img.save("/home/zhenhai/jobs/qMQC_v1/test.png", "PNG", -1);
+
+        QByteArray buffer(rowBytes * h, 0xFF);
+        uchar * p = (uchar*)buffer.data() + rowBytes;
+        QImage img(p, w, h, rowBytes, QImage::Format_ARGB32);
+        ui->toolButton->setIconSize(QSize(img.width(), img.height()));
+        ui->toolButton->setIcon(QPixmap::fromImage(img));
     }
+
+    error = cam.StopCapture();
+    if(error != PGRERROR_OK)
+    {
+        PrintError(error);
+        return -1;
+    }
+    error = cam.Disconnect();
+    if(error != PGRERROR_OK)
+    {
+        PrintError(error);
+        return -1;
+    }
+
 }
