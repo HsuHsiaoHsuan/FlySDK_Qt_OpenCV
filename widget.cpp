@@ -19,8 +19,9 @@ Widget::~Widget()
 
 void Widget::refresh_cam(QImage *img)
 {
-    ui->toolButton->setIconSize(QSize(img->width(), img->height()));
-    ui->toolButton->setIcon(QPixmap::fromImage(*img));
+    QPixmap tmp = QPixmap::fromImage(*img);
+    ui->label_image->setPixmap(tmp);
+    ui->label_image->setFixedSize(tmp.size());
 }
 
 void Widget::on_pushButton_open_cam_clicked()

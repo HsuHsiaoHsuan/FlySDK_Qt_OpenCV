@@ -46,6 +46,38 @@ void CamCaptureThread::run()
             error.PrintErrorTrace();
             stopped = true;
         }
+        // 2.1 get camera info
+        // 2.2 setup camera
+        Format7Info fmt7Info;
+        bool supported;
+        fmt7Info.mode = k_fmt7Mode;
+        error = cam.GetFormat7Info(&fmt7Info, &supported);
+        if (error != PGRERROR_OK) {
+            error.PrintErrorTrace();
+        }
+        // 2.3 validate Format7ImageSettings
+        Format7ImageSettings fmt7ImageSettings;
+        fmt7ImageSettings.mode = k_fmt7Mode;
+        fmt7ImageSettings.offsetX = 0;
+        fmt7ImageSettings.offsetY = 0;
+        fmt7ImageSettings.width = fmt7Info.maxWidth;
+        fmt7ImageSettings.height = fmt7Info.maxHeight;
+        fmt7ImageSettings.pixelFormat = k_fmt7PixFmt;
+
+        bool valid;
+        Format7PacketInfo fmt7PacketInfo;
+        error = cam.ValidateFormat7Settings(&fmt7ImageSettings, &valid, &fmt7PacketInfo);
+        if (error != PGRERROR_OK) {
+            error.PrintErrorTrace();
+        }
+        if (!valid) {
+            cout << "Format7 settings are not valid" << endl;
+        }
+
+        error = cam.SetFormat7Configuration(&fmt7ImageSettings, fmt7PacketInfo.recommendedBytesPerPacket );
+        if (error != PGRERROR_OK) {
+            error.PrintErrorTrace();
+        }
         // 3. start capture
         error = cam.StartCapture();
         if(error != PGRERROR_OK)

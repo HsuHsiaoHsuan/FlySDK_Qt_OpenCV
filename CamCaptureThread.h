@@ -37,8 +37,8 @@ private:
     QImage *output;
     bool binaryOnOff;
     unsigned int binaryValue;
-//    const FlyCapture2::Mode k_fmt7Mode = FlyCapture2::MODE_0;
-//    const FlyCapture2::PixelFormat k_fmt7PixFmt = FlyCapture2::PIXEL_FORMAT_MONO8;
+    const FlyCapture2::Mode k_fmt7Mode = FlyCapture2::MODE_1;
+    const FlyCapture2::PixelFormat k_fmt7PixFmt = FlyCapture2::PIXEL_FORMAT_MONO8;
 signals:
     void refresh(QImage *img);
 };
