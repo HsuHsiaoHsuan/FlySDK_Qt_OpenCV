@@ -12,6 +12,8 @@ CamCaptureThread::CamCaptureThread() :
 {
     this->stopped = false;
     this->binaryOnOff = false;
+    this->cannyOnOff = false;
+    this->minAreaRectOnOff = false;
 }
 
 void CamCaptureThread::stop()
@@ -32,6 +34,8 @@ void CamCaptureThread::run()
 
     if(numCameras > 0)
     {
+        RNG& rng = theRNG(); // for draw contours
+
         // 1. get camera
         error = busMgr.GetCameraFromIndex(0, &guid);
         if(error != PGRERROR_OK)
@@ -111,6 +115,54 @@ void CamCaptureThread::run()
                 cv::threshold(image, image, binaryValue, (100+150), CV_THRESH_BINARY);
             }
 
+            if(cannyOnOff)
+            {
+                cv::Mat tmp;
+                image.copyTo(tmp);
+                cv::Canny(tmp, image, cannyValue, 301, 3);
+            }
+
+            if(contourOnOff)
+            {
+                vector<vector<cv::Point>> contours;
+                vector<cv::Vec4i> hierarchy;
+                cv::findContours(image, contours, hierarchy, cv::RETR_CCOMP, cv::CHAIN_APPROX_SIMPLE);
+//                cv::Mat tmp = cv::Mat::zeros(image.size(), CV_8UC3);
+                image = cv::Mat::zeros(image.size(), CV_8UC3);
+                for (int x = 0; x < contours.size(); x++) {
+                    cv::Scalar color = cv::Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255)); // random color
+                    drawContours(image, contours, x, color, 2, 8, hierarchy, 0, Point());
+                }
+
+                if(minAreaRectOnOff)
+                {
+                    vector<cv::Rect> boundRect(contours.size());
+                    for (int x = 0; x < contours.size(); x++) {
+                        RotatedRect box = minAreaRect(contours[x]);
+                        Point2f vertex[4];
+                        box.points(vertex);
+
+                        for (int y = 0; y < 4; y++) {
+                            cv::line(image, vertex[y], vertex[(y + 1) % 4], Scalar(0, 255, 0), 2, LINE_AA);
+                        }
+                        double dist_a = cv::norm(vertex[0] - vertex[1]);
+                        double dist_b = cv::norm(vertex[1] - vertex[2]);
+                        std::ostringstream width;
+                        std::ostringstream height;
+                        if (dist_a > dist_b) {
+                            height << dist_a;
+                            width << dist_b;
+                        } else {
+                            height << dist_b;
+                            width << dist_a;
+                        }
+
+                        putText(image, "H:" + height.str(), Point(50, 50), CV_FONT_HERSHEY_COMPLEX, 1, Scalar(0, 0, 255));
+                        putText(image, "W:" + width.str(), Point(50, 80), CV_FONT_HERSHEY_COMPLEX, 1, Scalar(0, 0, 255));
+                    }
+                }
+            }
+
             *output = Mat2QImage(image);
             emit refresh(output);
         }
@@ -171,4 +223,24 @@ void CamCaptureThread::setBinaryOnOff(bool onOff)
 void CamCaptureThread::setBinaryValue(unsigned int value)
 {
     binaryValue = value;
+}
+
+void CamCaptureThread::setCannyOnOff(bool onOff)
+{
+    cannyOnOff = onOff;
+}
+
+void CamCaptureThread::setCannyValue(unsigned int value)
+{
+    cannyValue = value;
+}
+
+void CamCaptureThread::setContourOnOff(bool onOff)
+{
+    contourOnOff = onOff;
+}
+
+void CamCaptureThread::setMinAreaRectOnOff(bool onOff)
+{
+    minAreaRectOnOff = onOff;
 }

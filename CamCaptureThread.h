@@ -19,26 +19,37 @@ class CamCaptureThread : public QThread
 public:
     CamCaptureThread();
     void stop();
-    void setBinaryOnOff(bool onOff);
+    void setBinaryOnOff(bool onOff);          // binary
     void setBinaryValue(unsigned int value);
+    void setCannyOnOff(bool onOff);
+    void setCannyValue(unsigned int value);   // canny
+    void setContourOnOff(bool onOff);         // contour
+    void setMinAreaRectOnOff(bool onOff);     // min area rect
 protected:
     void run();
 private:
-    bool stopped;
-    FlyCapture2::Error error;
-    FlyCapture2::BusManager busMgr;
+    // for camera setting
     unsigned int numCameras;
-    FlyCapture2::PGRGuid guid;
-    FlyCapture2::Camera cam;
     const int k_numImages = 10;
-    QImage Mat2QImage(const cv::Mat &src);
+    FlyCapture2::BusManager busMgr;
+    FlyCapture2::Camera cam;
+    FlyCapture2::Error error;
+    const FlyCapture2::Mode k_fmt7Mode = FlyCapture2::MODE_1;
+    FlyCapture2::PGRGuid guid;
+    const FlyCapture2::PixelFormat k_fmt7PixFmt = FlyCapture2::PIXEL_FORMAT_MONO8;
 //    FlyCapture2::Image *rawImage;
 //    FlyCapture2::Image *rgbImage;
+
+    // for image
+    bool stopped;
+    QImage Mat2QImage(const cv::Mat &src);
     QImage *output;
     bool binaryOnOff;
     unsigned int binaryValue;
-    const FlyCapture2::Mode k_fmt7Mode = FlyCapture2::MODE_1;
-    const FlyCapture2::PixelFormat k_fmt7PixFmt = FlyCapture2::PIXEL_FORMAT_MONO8;
+    bool cannyOnOff;
+    unsigned int cannyValue;
+    bool contourOnOff;
+    bool minAreaRectOnOff;
 signals:
     void refresh(QImage *img);
 };
