@@ -22,9 +22,8 @@ void CamCaptureThread::stop()
 {
     stopped = true;
     startDrawing = false;
-    endPoint = cv::Point(-1, -1);
+    this->endPoint = Point(-1, -1);
     delete output;
-
 }
 
 void CamCaptureThread::run()
@@ -185,7 +184,7 @@ void CamCaptureThread::run()
                         cout << "startPoint.y " << startPoint.y << endl;
                         cout << "endPoint.x " << endPoint.x << endl;
                         cout << "endPoint.y " << endPoint.y << endl;
-                        Mat sampled = image(roi);
+                        Mat sampled = image(roi).clone();
                         imshow("roi", sampled);
 
                         //cv::rectangle(image, startPoint, endPoint, Scalar(255, 255, 0), 2);

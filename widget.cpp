@@ -10,6 +10,7 @@ Widget::Widget(QWidget *parent) :
 {
     ui->setupUi(this);
     thread = NULL;
+    connected = false;
 }
 
 Widget::~Widget()
@@ -28,11 +29,15 @@ void Widget::on_pushButton_open_cam_clicked()
 {
     thread = new CamCaptureThread;
 
-    connect(thread, SIGNAL(refresh(QImage*)), this, SLOT(refresh_cam(QImage*)));
-    connect(ui->label_image, SIGNAL(signal_MousePosition(int,int)), this, SLOT(slot_mouseMovingPosition(int,int)));
-    connect(ui->label_image, SIGNAL(signal_MousePress(bool, QPoint)), this, SLOT(slot_mousePressed(bool, QPoint)));
-    connect(ui->label_image, SIGNAL(signal_MouseRelease()), this, SLOT(slot_mouseRelease()));
-    connect(ui->label_image, SIGNAL(signal_MouseLeave()), this, SLOT(slot_mouseLeave()));
+    if(!connected)
+    {
+        connect(thread, SIGNAL(refresh(QImage*)), this, SLOT(refresh_cam(QImage*)));
+        connect(ui->label_image, SIGNAL(signal_MousePosition(int,int)), this, SLOT(slot_mouseMovingPosition(int,int)));
+        connect(ui->label_image, SIGNAL(signal_MousePress(bool, QPoint)), this, SLOT(slot_mousePressed(bool, QPoint)));
+        connect(ui->label_image, SIGNAL(signal_MouseRelease()), this, SLOT(slot_mouseRelease()));
+        connect(ui->label_image, SIGNAL(signal_MouseLeave()), this, SLOT(slot_mouseLeave()));
+        connected = true;
+    }
 
     thread->start();
     ui->pushButton_open_cam->setEnabled(false);

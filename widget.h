@@ -46,7 +46,7 @@ private slots:
 private:
     Ui::Widget *ui;
     CamCaptureThread *thread;
-
+    bool connected;
 };
 
 #endif // WIDGET_H
