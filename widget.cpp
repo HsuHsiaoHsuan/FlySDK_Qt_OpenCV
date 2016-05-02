@@ -27,7 +27,13 @@ void Widget::refresh_cam(QImage *img)
 void Widget::on_pushButton_open_cam_clicked()
 {
     thread = new CamCaptureThread;
+
     connect(thread, SIGNAL(refresh(QImage*)), this, SLOT(refresh_cam(QImage*)));
+    connect(ui->label_image, SIGNAL(signal_MousePosition(int,int)), this, SLOT(slot_mouseMovingPosition(int,int)));
+    connect(ui->label_image, SIGNAL(signal_MousePress(bool, QPoint)), this, SLOT(slot_mousePressed(bool, QPoint)));
+    connect(ui->label_image, SIGNAL(signal_MouseRelease()), this, SLOT(slot_mouseRelease()));
+    connect(ui->label_image, SIGNAL(signal_MouseLeave()), this, SLOT(slot_mouseLeave()));
+
     thread->start();
     ui->pushButton_open_cam->setEnabled(false);
     ui->pushButton_close_cam->setEnabled(true);
@@ -110,16 +116,32 @@ void Widget::on_checkBox_minAreaRect_stateChanged()
     thread->setMinAreaRectOnOff(ui->checkBox_minAreaRect->isChecked());
 }
 
-bool Widget::eventFilter(QObject *obj, QEvent *event) {
-    if (qobject_cast<QLabel*>(obj)==ui->label_image && event->type() == QEvent::MouseMove)
-    {
-        QMouseEvent *mouseEvent = (QMouseEvent*)event;
+void Widget::slot_mouseMovingPosition(int x, int y)
+{
+//    cout << "x: " << x << ", y: " << y << endl;
+    thread->setMovingPoint(x, y);
+}
 
-        //cout << "mouse x:" << mouseEvent->pos()->x() << endl;
-        return true;
+void Widget::slot_mousePressed(bool isLeftBtn, QPoint point)
+{
+    cout << "mouse pressed " << isLeftBtn << endl;
+    if(isLeftBtn)
+    {
+        thread->setStartPoint(point.x(), point.y());
     }
     else
     {
-        return QObject::eventFilter(obj, event);
+        thread->cancelPoint();
     }
+}
+
+void Widget::slot_mouseRelease()
+{
+    cout << "mouse release" << endl;
+}
+
+void Widget::slot_mouseLeave()
+{
+    cout << "mouse leave" << endl;
+
 }

@@ -14,11 +14,15 @@ CamCaptureThread::CamCaptureThread() :
     this->binaryOnOff = false;
     this->cannyOnOff = false;
     this->minAreaRectOnOff = false;
+
+    this->endPoint = Point(-1, -1);
 }
 
 void CamCaptureThread::stop()
 {
     stopped = true;
+    startDrawing = false;
+    endPoint = cv::Point(-1, -1);
     delete output;
 
 }
@@ -112,14 +116,12 @@ void CamCaptureThread::run()
 
             if(binaryOnOff)
             {
-                cv::threshold(image, image, binaryValue, (100+150), CV_THRESH_BINARY);
+                this->binaryConvert(image);
             }
 
             if(cannyOnOff)
             {
-                cv::Mat tmp;
-                image.copyTo(tmp);
-                cv::Canny(tmp, image, cannyValue, 301, 3);
+                this->cannyConvert(image);
             }
 
             if(contourOnOff)
@@ -160,6 +162,36 @@ void CamCaptureThread::run()
                         putText(image, "H:" + height.str(), Point(50, 50), CV_FONT_HERSHEY_COMPLEX, 1, Scalar(0, 0, 255));
                         putText(image, "W:" + width.str(), Point(50, 80), CV_FONT_HERSHEY_COMPLEX, 1, Scalar(0, 0, 255));
                     }
+                }
+            }
+
+            if(startDrawing)
+            {
+                cv::rectangle(image, startPoint, movingPoint, Scalar(255, 255, 0), 2);
+            }
+            else {
+                if(endPoint.x != -1)
+                {
+                    int startX = (startPoint.x <= endPoint.x) ? startPoint.x : endPoint.x;
+                    int startY = (startPoint.y <= endPoint.y) ? startPoint.y : endPoint.y;
+                    int width = std::abs(endPoint.x - startPoint.x);
+                    int height = std::abs(endPoint.y - startPoint.y);
+
+                    if(width > 0 && height > 0)
+                    {
+                        Rect roi = Rect(startX, startY, width, height);
+
+                        cout << "startPoint.x " << startPoint.x << endl;
+                        cout << "startPoint.y " << startPoint.y << endl;
+                        cout << "endPoint.x " << endPoint.x << endl;
+                        cout << "endPoint.y " << endPoint.y << endl;
+                        Mat sampled = image(roi);
+                        imshow("roi", sampled);
+
+                        //cv::rectangle(image, startPoint, endPoint, Scalar(255, 255, 0), 2);
+                        cv::rectangle(image, roi, Scalar(255, 255, 0), 2);
+                    }
+
                 }
             }
 
@@ -215,6 +247,18 @@ QImage CamCaptureThread::Mat2QImage(const cv::Mat &src)
     }
 }
 
+void CamCaptureThread::binaryConvert(Mat &img)
+{
+    cv::threshold(img, img, binaryValue, (100+150), CV_THRESH_BINARY);
+}
+
+void CamCaptureThread::cannyConvert(Mat &img)
+{
+    cv::Mat tmp;
+    img.copyTo(tmp);
+    cv::Canny(tmp, img, cannyValue, 301, 3);
+}
+
 void CamCaptureThread::setBinaryOnOff(bool onOff)
 {
     binaryOnOff = onOff;
@@ -243,4 +287,36 @@ void CamCaptureThread::setContourOnOff(bool onOff)
 void CamCaptureThread::setMinAreaRectOnOff(bool onOff)
 {
     minAreaRectOnOff = onOff;
+}
+
+void CamCaptureThread::setMovingPoint(int x, int y)
+{
+    movingPoint = cv::Point(x, y);
+}
+
+void CamCaptureThread::setStartPoint(int x, int y)
+{
+    if(startDrawing) // if it's already true
+    {
+        this->setEndPoint(x, y);
+    }
+    else
+    {
+        startDrawing = true;
+        startPoint = cv::Point(x, y);
+        endPoint = cv::Point(-1, -1);
+    }
+}
+
+void CamCaptureThread::setEndPoint(int x, int y)
+{
+    startDrawing = false;
+    endPoint = cv::Point(x, y);
+    //pointList.push_back(endPoint);
+}
+
+void CamCaptureThread::cancelPoint()
+{
+    startDrawing = false;
+    endPoint = cv::Point(-1, -1);
 }

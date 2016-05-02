@@ -1,13 +1,17 @@
 #ifndef WIDGET_H
 #define WIDGET_H
 
+#include <QEvent>
 #include <QImage>
+#include <QMouseEvent>
+#include <QPoint>
 #include <QToolButton>
 #include <QWidget>
 
 #include <iostream>
 
 #include "CamCaptureThread.h"
+#include "QImageLabel.h"
 
 namespace Ui {
 class Widget;
@@ -21,11 +25,9 @@ public:
     explicit Widget(QWidget *parent = 0);
     ~Widget();
 
-protected:
-    bool eventFilter(QObject *, QEvent *);
-
-public slots:
+private slots:
     void refresh_cam(QImage *img);
+
     void on_pushButton_open_cam_clicked();
     void on_pushButton_close_cam_clicked();
     void on_pushButton_close_app_clicked();
@@ -35,6 +37,11 @@ public slots:
     void on_horizontalSlider_canny_valueChanged();
     void on_checkBox_contour_stateChanged();        // contour
     void on_checkBox_minAreaRect_stateChanged();    // minAreaRect
+
+    void slot_mouseMovingPosition(int x, int y);
+    void slot_mousePressed(bool isLeftBtn, QPoint point);
+    void slot_mouseRelease();
+    void slot_mouseLeave();
 
 private:
     Ui::Widget *ui;

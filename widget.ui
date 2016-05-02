@@ -80,6 +80,9 @@
        <property name="alignment">
         <set>Qt::AlignHCenter|Qt::AlignTop</set>
        </property>
+       <property name="flat">
+        <bool>false</bool>
+       </property>
        <widget class="QCheckBox" name="checkBox_binary">
         <property name="geometry">
          <rect>
@@ -240,7 +243,7 @@
     </spacer>
    </item>
    <item>
-    <widget class="QLabel" name="label_image">
+    <widget class="QImageLabel" name="label_image">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
        <horstretch>0</horstretch>
@@ -255,6 +258,12 @@
      </property>
      <property name="cursor">
       <cursorShape>CrossCursor</cursorShape>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::Box</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
      </property>
      <property name="text">
       <string>image</string>
@@ -320,6 +329,13 @@
   </layout>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>QImageLabel</class>
+   <extends>QLabel</extends>
+   <header location="global">QImageLabel.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections>
   <connection>

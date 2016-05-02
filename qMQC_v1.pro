@@ -14,10 +14,12 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         widget.cpp \
-    CamCaptureThread.cpp
+    CamCaptureThread.cpp \
+    QImageLabel.cpp
 
 HEADERS  += widget.h \
-    CamCaptureThread.h
+    CamCaptureThread.h \
+    QImageLabel.h
 
 FORMS    += widget.ui
 

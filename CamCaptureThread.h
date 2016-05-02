@@ -5,11 +5,12 @@
 #include <QImage>
 #include <QThread>
 
-#include <opencv2/highgui.hpp>
 #include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 
 #include <iostream>
+#include <vector>
 
 #include <FlyCapture2.h>
 
@@ -25,6 +26,11 @@ public:
     void setCannyValue(unsigned int value);   // canny
     void setContourOnOff(bool onOff);         // contour
     void setMinAreaRectOnOff(bool onOff);     // min area rect
+
+    void setMovingPoint(int x, int y);
+    void setStartPoint(int x, int y);
+    void setEndPoint(int x, int y);
+    void cancelPoint();
 protected:
     void run();
 private:
@@ -44,12 +50,20 @@ private:
     bool stopped;
     QImage Mat2QImage(const cv::Mat &src);
     QImage *output;
+    void binaryConvert(cv::Mat &img);  // binary
     bool binaryOnOff;
     unsigned int binaryValue;
+    void cannyConvert(cv::Mat &img);   // canny
     bool cannyOnOff;
     unsigned int cannyValue;
     bool contourOnOff;
     bool minAreaRectOnOff;
+    std::vector<cv::Point> pointList;
+
+    bool startDrawing;
+    cv::Point movingPoint;
+    cv::Point startPoint;
+    cv::Point endPoint;
 signals:
     void refresh(QImage *img);
 };
