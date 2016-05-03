@@ -6,22 +6,22 @@ using namespace FlyCapture2;
 
 CamCaptureThread::CamCaptureThread() :
     output(new QImage)
-//    output(new QImage),
-//    rawImage(new Image),
-//    rgbImage(new Image)
 {
     this->stopped = false;
     this->binaryOnOff = false;
     this->cannyOnOff = false;
     this->minAreaRectOnOff = false;
 
+    this->startDrawing = false;
     this->endPoint = Point(-1, -1);
+
+    sampledImage = cv::Mat::zeros(3, 3, CV_8UC1);
 }
 
 void CamCaptureThread::stop()
 {
     stopped = true;
-    startDrawing = false;
+    this->startDrawing = false;
     this->endPoint = Point(-1, -1);
     delete output;
 }
@@ -96,45 +96,86 @@ void CamCaptureThread::run()
         Image rgbImage;
         while(!stopped)
         {
-//            error = cam.RetrieveBuffer(rawImage);
+            Rect roi;
             error = cam.RetrieveBuffer(&rawImage);
             if(error != PGRERROR_OK)
             {
                 error.PrintErrorTrace();
                 stopped = true;
             }
-//            rawImage->Convert(PIXEL_FORMAT_BGR, rgbImage);
             rawImage.Convert(PIXEL_FORMAT_BGR, &rgbImage);
 
             unsigned int rowBytes =
                     (double)rgbImage.GetReceivedDataSize()/(double)rgbImage.GetRows();
-//                    (double)rgbImage->GetReceivedDataSize()/(double)rgbImage->GetRows();
             cv::Mat image =
                     cv::Mat(rgbImage.GetRows(), rgbImage.GetCols(), CV_8UC3, rgbImage.GetData(),rowBytes);
-//                    cv::Mat(rgbImage->GetRows(), rgbImage->GetCols(), CV_8UC3, rgbImage->GetData(),rowBytes);
+
+            if(this->startDrawing)
+            {
+                cv::rectangle(image, startPoint, movingPoint, Scalar(255, 255, 0), 1);
+            }
+            else
+            {
+                if(endPoint.x != -1)
+                {
+                    int startX = (startPoint.x <= endPoint.x) ? startPoint.x : endPoint.x;
+                    int startY = (startPoint.y <= endPoint.y) ? startPoint.y : endPoint.y;
+                    int width = std::abs(endPoint.x - startPoint.x);
+                    int height = std::abs(endPoint.y - startPoint.y);
+
+                    if(width > 0 && height > 0)
+                    {
+//                        Rect roi = Rect(startX, startY, width, height);
+                        roi = Rect(startX, startY, width, height);
+
+                        cout << "startPoint.x " << startPoint.x << endl;
+                        cout << "startPoint.y " << startPoint.y << endl;
+                        cout << "endPoint.x " << endPoint.x << endl;
+                        cout << "endPoint.y " << endPoint.y << endl;
+                        sampledImage = image(roi).clone();
+
+                        imshow("roi", sampledImage);
+
+                        cv::rectangle(image, roi, Scalar(255, 255, 0), 1);
+                    }
+
+                }
+            }
 
             if(binaryOnOff)
             {
                 this->binaryConvert(image);
+                if(sampledImage.type() > 0)
+                {
+                    this->binaryConvert(sampledImage);
+                    imshow("roi", sampledImage);
+                }
             }
 
             if(cannyOnOff)
             {
                 this->cannyConvert(image);
+                if(sampledImage.type() > 0)
+                {
+                    this->cannyConvert(sampledImage);
+                    imshow("roi", sampledImage);
+                }
             }
 
             if(contourOnOff)
             {
+                /*
                 vector<vector<cv::Point>> contours;
                 vector<cv::Vec4i> hierarchy;
                 cv::findContours(image, contours, hierarchy, cv::RETR_CCOMP, cv::CHAIN_APPROX_SIMPLE);
-//                cv::Mat tmp = cv::Mat::zeros(image.size(), CV_8UC3);
                 image = cv::Mat::zeros(image.size(), CV_8UC3);
                 for (int x = 0; x < contours.size(); x++) {
                     cv::Scalar color = cv::Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255)); // random color
                     drawContours(image, contours, x, color, 2, 8, hierarchy, 0, Point());
-                }
+                }*/
+                this->contourConvert(image);
 
+                /*
                 if(minAreaRectOnOff)
                 {
                     vector<cv::Rect> boundRect(contours.size());
@@ -161,38 +202,39 @@ void CamCaptureThread::run()
                         putText(image, "H:" + height.str(), Point(50, 50), CV_FONT_HERSHEY_COMPLEX, 1, Scalar(0, 0, 255));
                         putText(image, "W:" + width.str(), Point(50, 80), CV_FONT_HERSHEY_COMPLEX, 1, Scalar(0, 0, 255));
                     }
-                }
+                }*/
+                imshow("roi", sampledImage);
             }
 
-            if(startDrawing)
-            {
-                cv::rectangle(image, startPoint, movingPoint, Scalar(255, 255, 0), 2);
-            }
-            else {
-                if(endPoint.x != -1)
-                {
-                    int startX = (startPoint.x <= endPoint.x) ? startPoint.x : endPoint.x;
-                    int startY = (startPoint.y <= endPoint.y) ? startPoint.y : endPoint.y;
-                    int width = std::abs(endPoint.x - startPoint.x);
-                    int height = std::abs(endPoint.y - startPoint.y);
+//            if(startDrawing)
+//            {
+//                cv::rectangle(image, startPoint, movingPoint, Scalar(255, 255, 0), 2);
+//            }
+//            else {
+//                if(endPoint.x != -1)
+//                {
+//                    int startX = (startPoint.x <= endPoint.x) ? startPoint.x : endPoint.x;
+//                    int startY = (startPoint.y <= endPoint.y) ? startPoint.y : endPoint.y;
+//                    int width = std::abs(endPoint.x - startPoint.x);
+//                    int height = std::abs(endPoint.y - startPoint.y);
 
-                    if(width > 0 && height > 0)
-                    {
-                        Rect roi = Rect(startX, startY, width, height);
+//                    if(width > 0 && height > 0)
+//                    {
+//                        Rect roi = Rect(startX, startY, width, height);
 
-                        cout << "startPoint.x " << startPoint.x << endl;
-                        cout << "startPoint.y " << startPoint.y << endl;
-                        cout << "endPoint.x " << endPoint.x << endl;
-                        cout << "endPoint.y " << endPoint.y << endl;
-                        Mat sampled = image(roi).clone();
-                        imshow("roi", sampled);
+//                        cout << "startPoint.x " << startPoint.x << endl;
+//                        cout << "startPoint.y " << startPoint.y << endl;
+//                        cout << "endPoint.x " << endPoint.x << endl;
+//                        cout << "endPoint.y " << endPoint.y << endl;
+//                        Mat sampled = image(roi).clone();
 
-                        //cv::rectangle(image, startPoint, endPoint, Scalar(255, 255, 0), 2);
-                        cv::rectangle(image, roi, Scalar(255, 255, 0), 2);
-                    }
+//                        imshow("roi", sampled);
 
-                }
-            }
+//                        cv::rectangle(image, roi, Scalar(255, 255, 0), 2);
+//                    }
+
+//                }
+//            }
 
             *output = Mat2QImage(image);
             emit refresh(output);
@@ -209,8 +251,6 @@ void CamCaptureThread::run()
         {
             error.PrintErrorTrace();
         }
-//        delete rawImage;
-//        delete rgbImage;
     }
 }
 
@@ -258,6 +298,20 @@ void CamCaptureThread::cannyConvert(Mat &img)
     cv::Canny(tmp, img, cannyValue, 301, 3);
 }
 
+void CamCaptureThread::contourConvert(Mat &img)
+{
+    RNG& rng = theRNG();
+
+    vector<vector<cv::Point>> contours;
+    vector<cv::Vec4i> hierarchy;
+    cv::findContours(img, contours, hierarchy, cv::RETR_CCOMP, cv::CHAIN_APPROX_SIMPLE);
+    img = cv::Mat::zeros(img.size(), CV_8UC3);
+    for (int x = 0; x < contours.size(); x++) {
+        cv::Scalar color = cv::Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255)); // random color
+        drawContours(img, contours, x, color, 2, 8, hierarchy, 0, Point());
+    }
+}
+
 void CamCaptureThread::setBinaryOnOff(bool onOff)
 {
     binaryOnOff = onOff;
@@ -295,13 +349,13 @@ void CamCaptureThread::setMovingPoint(int x, int y)
 
 void CamCaptureThread::setStartPoint(int x, int y)
 {
-    if(startDrawing) // if it's already true
+    if(this->startDrawing) // if it's already true
     {
         this->setEndPoint(x, y);
     }
     else
     {
-        startDrawing = true;
+        this->startDrawing = true;
         startPoint = cv::Point(x, y);
         endPoint = cv::Point(-1, -1);
     }
@@ -318,4 +372,6 @@ void CamCaptureThread::cancelPoint()
 {
     startDrawing = false;
     endPoint = cv::Point(-1, -1);
+    cv::destroyWindow("roi");
+    sampledImage = cv::Mat::zeros(3, 3, CV_8UC1);
 }

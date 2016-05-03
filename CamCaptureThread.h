@@ -50,16 +50,19 @@ private:
     bool stopped;
     QImage Mat2QImage(const cv::Mat &src);
     QImage *output;
-    void binaryConvert(cv::Mat &img);  // binary
+    void binaryConvert(cv::Mat &img);      // binary
     bool binaryOnOff;
     unsigned int binaryValue;
-    void cannyConvert(cv::Mat &img);   // canny
+    void cannyConvert(cv::Mat &img);       // canny
     bool cannyOnOff;
     unsigned int cannyValue;
+    void contourConvert(cv::Mat &img);     // contour
     bool contourOnOff;
+    void minAreaRectConvert(cv::Mat &img); // minAreaRect
     bool minAreaRectOnOff;
     std::vector<cv::Point> pointList;
 
+    cv::Mat sampledImage;
     bool startDrawing;
     cv::Point movingPoint;
     cv::Point startPoint;
