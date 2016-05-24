@@ -134,8 +134,6 @@ void CamCaptureThread::run()
                         cout << "endPoint.y " << endPoint.y << endl;
                         sampledImage = image(roi).clone();
 
-                        imshow("roi", sampledImage);
-
                         cv::rectangle(image, roi, Scalar(255, 255, 0), 1);
                     }
 
@@ -148,7 +146,6 @@ void CamCaptureThread::run()
                 if(sampledImage.type() > 0)
                 {
                     this->binaryConvert(sampledImage);
-                    imshow("roi", sampledImage);
                 }
             }
 
@@ -158,85 +155,18 @@ void CamCaptureThread::run()
                 if(sampledImage.type() > 0)
                 {
                     this->cannyConvert(sampledImage);
-                    imshow("roi", sampledImage);
                 }
             }
 
             if(contourOnOff)
             {
-                /*
-                vector<vector<cv::Point>> contours;
-                vector<cv::Vec4i> hierarchy;
-                cv::findContours(image, contours, hierarchy, cv::RETR_CCOMP, cv::CHAIN_APPROX_SIMPLE);
-                image = cv::Mat::zeros(image.size(), CV_8UC3);
-                for (int x = 0; x < contours.size(); x++) {
-                    cv::Scalar color = cv::Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255)); // random color
-                    drawContours(image, contours, x, color, 2, 8, hierarchy, 0, Point());
-                }*/
-                this->contourConvert(image);
-
-                /*
-                if(minAreaRectOnOff)
-                {
-                    vector<cv::Rect> boundRect(contours.size());
-                    for (int x = 0; x < contours.size(); x++) {
-                        RotatedRect box = minAreaRect(contours[x]);
-                        Point2f vertex[4];
-                        box.points(vertex);
-
-                        for (int y = 0; y < 4; y++) {
-                            cv::line(image, vertex[y], vertex[(y + 1) % 4], Scalar(0, 255, 0), 2, LINE_AA);
-                        }
-                        double dist_a = cv::norm(vertex[0] - vertex[1]);
-                        double dist_b = cv::norm(vertex[1] - vertex[2]);
-                        std::ostringstream width;
-                        std::ostringstream height;
-                        if (dist_a > dist_b) {
-                            height << dist_a;
-                            width << dist_b;
-                        } else {
-                            height << dist_b;
-                            width << dist_a;
-                        }
-
-                        putText(image, "H:" + height.str(), Point(50, 50), CV_FONT_HERSHEY_COMPLEX, 1, Scalar(0, 0, 255));
-                        putText(image, "W:" + width.str(), Point(50, 80), CV_FONT_HERSHEY_COMPLEX, 1, Scalar(0, 0, 255));
-                    }
-                }*/
+//                this->contourConvert(image);
+                this->contourConvert(sampledImage);
                 imshow("roi", sampledImage);
             }
 
-//            if(startDrawing)
-//            {
-//                cv::rectangle(image, startPoint, movingPoint, Scalar(255, 255, 0), 2);
-//            }
-//            else {
-//                if(endPoint.x != -1)
-//                {
-//                    int startX = (startPoint.x <= endPoint.x) ? startPoint.x : endPoint.x;
-//                    int startY = (startPoint.y <= endPoint.y) ? startPoint.y : endPoint.y;
-//                    int width = std::abs(endPoint.x - startPoint.x);
-//                    int height = std::abs(endPoint.y - startPoint.y);
-
-//                    if(width > 0 && height > 0)
-//                    {
-//                        Rect roi = Rect(startX, startY, width, height);
-
-//                        cout << "startPoint.x " << startPoint.x << endl;
-//                        cout << "startPoint.y " << startPoint.y << endl;
-//                        cout << "endPoint.x " << endPoint.x << endl;
-//                        cout << "endPoint.y " << endPoint.y << endl;
-//                        Mat sampled = image(roi).clone();
-
-//                        imshow("roi", sampled);
-
-//                        cv::rectangle(image, roi, Scalar(255, 255, 0), 2);
-//                    }
-
-//                }
-//            }
-
             *output = Mat2QImage(image);
+            imshow("roi", sampledImage);
             emit refresh(output);
         }
         // 4. stop camera
@@ -298,17 +228,127 @@ void CamCaptureThread::cannyConvert(Mat &img)
     cv::Canny(tmp, img, cannyValue, 301, 3);
 }
 
+void CamCaptureThread::rotateImage(Mat &img)
+{
+    vector<vector<cv::Point>> contours;
+    vector<cv::Vec4i> hierarchy;
+    cv::findContours(img, contours, hierarchy, cv::RETR_CCOMP, cv::CHAIN_APPROX_SIMPLE);
+
+    vector<cv::Point> biggestContour = contours[0];
+    for (int x = 0; x < contours.size(); x++)
+    {
+        if (contours[x].size() > biggestContour.size())
+        {
+            biggestContour = contours[x];
+        }
+    }
+
+    RotatedRect box = minAreaRect(biggestContour);
+    Point2f vertex[4];
+    box.points(vertex);
+
+    Mat M, rotated, cropped;
+    float box_angle = box.angle;
+    Size box_size = box.size;
+    if (box_angle < -45)
+    {
+        box_angle += 90.0;
+        swap(box_size.width, box_size.height);
+    }
+    // get the rotation matrix
+    M = getRotationMatrix2D(box.center, box_angle, 1.0);
+    // perform the affine transformation
+    warpAffine(img, rotated, M, img.size(), INTER_CUBIC);
+    imshow("rotated", rotated);
+    img = rotated;
+}
+
 void CamCaptureThread::contourConvert(Mat &img)
 {
+    //this->rotateImage(img);
+//    vector<cv::Point> bigContour;
+//    vector<cv::Point> smallContour;
+
     RNG& rng = theRNG();
 
     vector<vector<cv::Point>> contours;
     vector<cv::Vec4i> hierarchy;
     cv::findContours(img, contours, hierarchy, cv::RETR_CCOMP, cv::CHAIN_APPROX_SIMPLE);
     img = cv::Mat::zeros(img.size(), CV_8UC3);
+
+//    if (contours[0].size() < contours[1].size())
+//    {
+//        smallContour = contours[0];
+//        bigContour = contours[1];
+//    }
+
     for (int x = 0; x < contours.size(); x++) {
         cv::Scalar color = cv::Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255)); // random color
         drawContours(img, contours, x, color, 2, 8, hierarchy, 0, Point());
+    }
+
+    if(minAreaRectOnOff) // find the minAreaRect
+    {
+        RotatedRect bigOne;
+        RotatedRect smallOne;
+
+        if (contours[0].size() < contours[1].size())
+        {
+            smallOne = minAreaRect(contours[1]);
+            bigOne = minAreaRect(contours[0]);
+        }
+        else
+        {
+            smallOne = minAreaRect(contours[0]);
+            bigOne = minAreaRect(contours[1]);
+        }
+
+        Point2f bigVertex[4];
+        Point2f smallVertex[4];
+
+        smallOne.points(bigVertex);
+        bigOne.points(smallVertex);
+
+        cout << bigVertex[0] << endl;
+        cout << bigVertex[1] << endl;
+        cout << bigVertex[2] << endl;
+        cout << bigVertex[3] << endl;
+
+        cv::line(img, Point2f(bigVertex[1].x, smallVertex[1].y), bigVertex[1], Scalar(255, 0, 0), 2, LINE_AA);
+
+
+//        vector<cv::Rect> boundRect(contours.size());
+        for (int x = 0; x < contours.size(); x++) {
+            RotatedRect box = minAreaRect(contours[x]);
+            Point2f vertex[4];
+            box.points(vertex);
+//            cout << "Points :: angle:: " << box.angle << " size:: " << box.size << " size.area:: " << box.size.area() << endl;
+
+            for (int y = 0; y < 4; y++) {
+                //cv::line(img, vertex[y], vertex[(y + 1) % 4], Scalar(0, 255, 0), 2, LINE_AA);
+//                std::ostringstream tmp;
+//                tmp <<  vertex[y];
+//                cout << tmp.str() << endl;
+//                putText(img, tmp.str(), vertex[y], CV_FONT_HERSHEY_COMPLEX, 0.3, Scalar(0, 0, 255));
+            }
+            cout << "-----------------" << endl;
+/*
+            double dist_a = cv::norm(vertex[0] - vertex[1]);
+            double dist_b = cv::norm(vertex[1] - vertex[2]);
+            std::ostringstream width;
+            std::ostringstream height;
+            if (dist_a > dist_b) {
+                height << dist_a;
+                width << dist_b;
+            } else {
+                height << dist_b;
+                width << dist_a;
+            }
+
+            putText(img, "H:" + height.str(), Point(50, 50), CV_FONT_HERSHEY_COMPLEX, 0.3, Scalar(0, 0, 255));
+            putText(img, "W:" + width.str(), Point(50, 80), CV_FONT_HERSHEY_COMPLEX, 0.3, Scalar(0, 0, 255));
+*/
+        }
     }
 }
 

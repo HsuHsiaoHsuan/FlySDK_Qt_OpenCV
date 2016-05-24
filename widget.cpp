@@ -123,7 +123,6 @@ void Widget::on_checkBox_minAreaRect_stateChanged()
 
 void Widget::slot_mouseMovingPosition(int x, int y)
 {
-//    cout << "x: " << x << ", y: " << y << endl;
     thread->setMovingPoint(x, y);
 }
 

@@ -56,10 +56,10 @@ private:
     void cannyConvert(cv::Mat &img);       // canny
     bool cannyOnOff;
     unsigned int cannyValue;
+    void rotateImage(cv::Mat &img);        // rotate image
     void contourConvert(cv::Mat &img);     // contour
     bool contourOnOff;
-    void minAreaRectConvert(cv::Mat &img); // minAreaRect
-    bool minAreaRectOnOff;
+    bool minAreaRectOnOff;                 // minAreaRect
     std::vector<cv::Point> pointList;
 
     cv::Mat sampledImage;
