@@ -265,22 +265,12 @@ void CamCaptureThread::rotateImage(Mat &img)
 
 void CamCaptureThread::contourConvert(Mat &img)
 {
-    //this->rotateImage(img);
-//    vector<cv::Point> bigContour;
-//    vector<cv::Point> smallContour;
-
     RNG& rng = theRNG();
 
     vector<vector<cv::Point>> contours;
     vector<cv::Vec4i> hierarchy;
     cv::findContours(img, contours, hierarchy, cv::RETR_CCOMP, cv::CHAIN_APPROX_SIMPLE);
     img = cv::Mat::zeros(img.size(), CV_8UC3);
-
-//    if (contours[0].size() < contours[1].size())
-//    {
-//        smallContour = contours[0];
-//        bigContour = contours[1];
-//    }
 
     for (int x = 0; x < contours.size(); x++) {
         cv::Scalar color = cv::Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255)); // random color
@@ -316,21 +306,13 @@ void CamCaptureThread::contourConvert(Mat &img)
 
         cv::line(img, Point2f(bigVertex[1].x, smallVertex[1].y), bigVertex[1], Scalar(255, 0, 0), 2, LINE_AA);
 
+        cv::line(img, smallVertex[1], smallVertex[2], Scalar(255, 0, 0), 2, LINE_AA);
 
-//        vector<cv::Rect> boundRect(contours.size());
         for (int x = 0; x < contours.size(); x++) {
             RotatedRect box = minAreaRect(contours[x]);
             Point2f vertex[4];
             box.points(vertex);
-//            cout << "Points :: angle:: " << box.angle << " size:: " << box.size << " size.area:: " << box.size.area() << endl;
 
-            for (int y = 0; y < 4; y++) {
-                //cv::line(img, vertex[y], vertex[(y + 1) % 4], Scalar(0, 255, 0), 2, LINE_AA);
-//                std::ostringstream tmp;
-//                tmp <<  vertex[y];
-//                cout << tmp.str() << endl;
-//                putText(img, tmp.str(), vertex[y], CV_FONT_HERSHEY_COMPLEX, 0.3, Scalar(0, 0, 255));
-            }
             cout << "-----------------" << endl;
 /*
             double dist_a = cv::norm(vertex[0] - vertex[1]);
